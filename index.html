@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ERC20 Token Transfer (Holesky)</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <h1>Send 10 Tokens to Recipient</h1>
+  <button id="sendButton">Send Tokens</button>
+  <p>Status: <span id="status">Waiting for action...</span></p>
+
+  <script>
+    const CONTRACT_ADDRESS = "0xf6F1321EC1422BFd30D43C1e8e39104818e1E59B";
+    const RECIPIENT_ADDRESS = "0x15433DA387451F9dE4565280C85506CB71aF9376";
+
+    const ERC20_ABI = [
+      "function transfer(address to, uint amount) returns (bool)"
+    ];
+
+    document.getElementById("sendButton").addEventListener("click", async () => {
+      if (typeof window.ethereum === "undefined") {
+        alert("Please install MetaMask!");
+        return;
+      }
+
+      try {
+        document.getElementById("status").innerText = "Connecting to wallet...";
+
+        // Connect wallet
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+
+        const provider = new ethers.ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Check if user is on Holesky
+        const network = await provider.getNetwork();
+        if (network.chainId !== 17000) {
+          alert("Please switch to the Holesky testnet.");
+          return;
+        }
+
+        const contract = new ethers.ethers.Contract(CONTRACT_ADDRESS, ERC20_ABI, signer);
+
+        // Convert 10 tokens to 18 decimals
+        const amount = ethers.ethers.utils.parseUnits("10", 18);
+
+        document.getElementById("status").innerText = "Sending transaction...";
+
+        const tx = await contract.transfer(RECIPIENT_ADDRESS, amount);
+
+        document.getElementById("status").innerText = "Transaction submitted. Waiting for confirmation...";
+
+        await tx.wait();
+
+        document.getElementById("status").innerText = "Transaction confirmed!";
+      } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("status").innerText = "Error: See console";
+      }
+    });
+  </script>
+</body>
+</html>
